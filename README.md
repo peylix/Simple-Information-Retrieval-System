@@ -1,2 +1,5 @@
 # Simple-Information-Retrieval-System
-COMP3009J Programming Assignment. A basic information retrieval system that is capable of performing preprocessing, indexing, retrieval and evaluation.
+
+Programming assignment for COMP3009J Information Retrieval.
+
+A basic information retrieval system that is capable of performing preprocessing, indexing, retrieval (using BM25) and evaluation.
