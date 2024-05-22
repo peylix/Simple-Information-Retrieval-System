@@ -55,23 +55,49 @@ def process_docs(documents: dict, stopwords: list) -> dict:
 
 def get_all_terms(documents: dict) -> list:
     all_terms = []
+
     for document in documents:
         for word in documents[document]:
             if word not in all_terms:
                 all_terms.append(word)
+
     return all_terms
 
 
-def document_vector(documents: dict) -> dict:
-    word_vectors = {}
+def compute_document_vectors(documents: dict) -> dict:
+    document_vectors = {}
     all_terms = get_all_terms(process_docs(documents))
+
     for document in documents:
-        if document not in word_vectors:
-            word_vectors[document] = [0] * len(all_terms)
+        if document not in document_vectors:
+            document_vectors[document] = [0] * len(all_terms)
+
         for word in documents[document]:
             if word in all_terms:
-                word_vectors[document][all_terms.index(word)] = 1
-    return word_vectors
+                document_vectors[document][all_terms.index(word)] = 1
+
+    return document_vectors
+
+
+def build_inverted_document_index(processed_documents: dict) -> dict:
+    inverted_index = {}
+    
+    for document_id, terms in processed_documents.items():
+        term_freq = {}
+        
+        for term in terms:
+            if term in term_freq:
+                term_freq[term] += 1
+            else:
+                term_freq[term] = 1
+        
+        for term, freq in term_freq.items():
+            if term in inverted_index:
+                inverted_index[term][document_id] = freq
+            else:
+                inverted_index[term] = {document_id: freq}
+    
+    return inverted_index
 
 
 
@@ -80,18 +106,17 @@ if __name__ == '__main__':
         stopwords = [word.strip() for word in file.readlines()]
 
     documents = {}
-
     for document in sorted(os.listdir(get_path_of('documents')), key=lambda x: int(x) if x.isdigit() else x):
         file_path = get_path_of(f'documents/{document}')
         if os.path.isfile(file_path):
             with open(file_path, 'r') as file:
                 content = file.read()
                 documents[document] = content.split()
+
     documents = process_docs(documents, stopwords)
-    
-    print(documents)
+    inverted_indexes = build_inverted_document_index(documents)
 
     # Write the documents to a file
-    with open(get_path_of('output.txt', ignore_existence=True), 'w') as file:
-        for document in documents:
-            file.write(f'{document}: {documents[document]}\n')
+    with open(get_path_of('21207464-small.index', ignore_existence=True), 'w') as file:
+        for word in inverted_indexes:
+            file.write(f'{word}: {inverted_indexes[word]}\n')
