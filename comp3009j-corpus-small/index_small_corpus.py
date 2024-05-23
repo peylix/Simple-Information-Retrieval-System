@@ -3,11 +3,17 @@
 import os
 import sys
 import string
+import time
 from files import porter
 
 p = porter.PorterStemmer()
 
 def get_path_of(file_name: str, ignore_existence: bool = False) -> str:
+    '''
+    This function is for acquiring the file path of the given file name.
+    It will get the path from the command line arguments if the arguments follow the correct format.
+    If the file does not exist, the program will exit with an error message.
+    '''
     if len(sys.argv) == 3 and sys.argv[1] == '-p':
         path = sys.argv[2]
         # print('the path is ', path)
@@ -31,8 +37,13 @@ def get_path_of(file_name: str, ignore_existence: bool = False) -> str:
 
 
 def process_docs(documents: dict, stopwords: list) -> dict:
+    # TODO Optimize the function to make it faster!
+    '''
+    This function is for conducting several preprocessing steps on the documents.
+    The steps include removing punctuation, digits, stopwords, and stemming.
+    '''
     result = {}
-    stopwords_set = set(stopwords) # Using set can make the process faster
+    stopwords_set = set(stopwords) # Using set to make the process faster
     # A translation table containing the rules for removing punctuation and digits
     translation_table = str.maketrans('', '', string.punctuation + string.digits)
 
@@ -54,6 +65,11 @@ def process_docs(documents: dict, stopwords: list) -> dict:
 
 
 def build_inverted_document_index(processed_documents: dict, k: float = 1.0) -> dict:
+    '''
+    This function is for building the inverted index of the documents.
+    The inverted index will be stored in a dictionary where the key is the term 
+    and the value is a dictionary containing the document ID and the BM25 term frequency.
+    '''
     inverted_index = {}
     
     for document_id, terms in processed_documents.items():
@@ -79,6 +95,10 @@ def build_inverted_document_index(processed_documents: dict, k: float = 1.0) -> 
 
 # Compute the document frequency in BM25
 def compute_idf(inverted_index: dict, total_docs: int) -> dict:
+    '''
+    This function computes the inverse document frequency (or IDF) of the terms in the given inverted index.
+    The IDF value here is calculated in alignment with the BM25 formula.
+    '''
     idf = {}
     
     for term in inverted_index:
@@ -87,11 +107,15 @@ def compute_idf(inverted_index: dict, total_docs: int) -> dict:
     return idf
     
 
-
 if __name__ == '__main__':
+    start_time = time.process_time()
+    print("Start indexing...")
+
+    # Load the stopwords
     with open(get_path_of('files/stopwords.txt'), 'r') as file:
         stopwords = [word.strip() for word in file.readlines()]
 
+    # Load the documents
     documents = {}
     for document in sorted(os.listdir(get_path_of('documents')), key=lambda x: int(x) if x.isdigit() else x):
         file_path = get_path_of(f'documents/{document}')
@@ -99,19 +123,33 @@ if __name__ == '__main__':
             with open(file_path, 'r') as file:
                 content = file.read()
                 documents[document] = content.split()
+    current_time = time.process_time()
+    print(f'{len(documents)} documents are loaded in {current_time - start_time} seconds.')
 
+    # Process the documents
     documents = process_docs(documents, stopwords)
-    inverted_indexes = build_inverted_document_index(documents)
-    idf = compute_idf(inverted_indexes, len(documents));
+    current_time = time.process_time()
+    print(f'{len(documents)} documents are processed in {current_time - start_time} seconds.')
 
+    # Build the inverted index
+    inverted_indexes = build_inverted_document_index(documents)
+    current_time = time.process_time()
+    print(f'Inverted indexes are built in {current_time - start_time} seconds.')
+
+    # Compute the IDF
+    idf = compute_idf(inverted_indexes, len(documents));
+    current_time = time.process_time()
+    print(f'IDF is computed in {current_time - start_time} seconds.')
+
+    # Merge the inverted indexes and the IDF
     merged = {}
-    
     for term in idf:
         merged[term] = {'idf': idf[term], 'docs': inverted_indexes[term]}
-
 
     # Write the documents to a file
     with open(get_path_of('21207464-small.index', ignore_existence=True), 'w') as file:
         for term in merged:
             file.write(f'{term}: {merged[term]}\n')
-
+    
+    end_time = time.process_time()
+    print(f'Indexing completed in {end_time - start_time} seconds.')
