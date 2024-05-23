@@ -53,52 +53,39 @@ def process_docs(documents: dict, stopwords: list) -> dict:
     return result
 
 
-def get_all_terms(documents: dict) -> list:
-    all_terms = []
-
-    for document in documents:
-        for word in documents[document]:
-            if word not in all_terms:
-                all_terms.append(word)
-
-    return all_terms
-
-
-def compute_document_vectors(documents: dict) -> dict:
-    document_vectors = {}
-    all_terms = get_all_terms(process_docs(documents))
-
-    for document in documents:
-        if document not in document_vectors:
-            document_vectors[document] = [0] * len(all_terms)
-
-        for word in documents[document]:
-            if word in all_terms:
-                document_vectors[document][all_terms.index(word)] = 1
-
-    return document_vectors
-
-
-def build_inverted_document_index(processed_documents: dict) -> dict:
+def build_inverted_document_index(processed_documents: dict, k: float = 1.0) -> dict:
     inverted_index = {}
     
     for document_id, terms in processed_documents.items():
         term_freq = {}
-        
+
         for term in terms:
             if term in term_freq:
                 term_freq[term] += 1
             else:
                 term_freq[term] = 1
+                
+        # Compute term frequency in BM25
+        bm25_term_freq = {term: (freq * (k + 1)) / (freq + k) for term, freq in term_freq.items()}
         
-        for term, freq in term_freq.items():
+        for term, bm25_freq in bm25_term_freq.items():
             if term in inverted_index:
-                inverted_index[term][document_id] = freq
+                inverted_index[term][document_id] = bm25_freq
             else:
-                inverted_index[term] = {document_id: freq}
+                inverted_index[term] = {document_id: bm25_freq}
     
     return inverted_index
 
+
+# Compute the document frequency in BM25
+def compute_idf(inverted_index: dict, total_docs: int) -> dict:
+    idf = {}
+    
+    for term in inverted_index:
+        idf[term] = 1 + (total_docs - len(inverted_index[term]) + 0.5) / (len(inverted_index[term]) + 0.5)
+    
+    return idf
+    
 
 
 if __name__ == '__main__':
@@ -115,8 +102,16 @@ if __name__ == '__main__':
 
     documents = process_docs(documents, stopwords)
     inverted_indexes = build_inverted_document_index(documents)
+    idf = compute_idf(inverted_indexes, len(documents));
+
+    merged = {}
+    
+    for term in idf:
+        merged[term] = {'idf': idf[term], 'docs': inverted_indexes[term]}
+
 
     # Write the documents to a file
     with open(get_path_of('21207464-small.index', ignore_existence=True), 'w') as file:
-        for word in inverted_indexes:
-            file.write(f'{word}: {inverted_indexes[word]}\n')
+        for term in merged:
+            file.write(f'{term}: {merged[term]}\n')
+
