@@ -12,7 +12,8 @@ def get_path_of(file_name: str, ignore_existence: bool = False) -> str:
     '''
     This function is for acquiring the file path of the given file name.
     It will get the path from the command line arguments if the arguments follow the correct format.
-    If the file does not exist, the program will exit with an error message.
+    If the file does not exist or the arguments are not in the correct format, 
+    the program will exit with an error message.
     '''
     if len(sys.argv) == 3 and sys.argv[1] == '-p':
         path = sys.argv[2]
