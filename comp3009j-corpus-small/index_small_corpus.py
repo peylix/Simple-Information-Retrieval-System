@@ -4,9 +4,9 @@ import os
 import sys
 import string
 import time
+import math
 from files import porter
 
-p = porter.PorterStemmer()
 
 def get_path_of(file_name: str, ignore_existence: bool = False) -> str:
     '''
@@ -14,6 +14,13 @@ def get_path_of(file_name: str, ignore_existence: bool = False) -> str:
     It will get the path from the command line arguments if the arguments follow the correct format.
     If the file does not exist or the arguments are not in the correct format, 
     the program will exit with an error message.
+
+    Args:
+    file_name (str): the name of the file (may also includes part of the path).
+    ignore_existence (bool): a flag to ignore the existence of the file (default False), can be used for writing files.
+
+    Returns:
+    str: the file path.
     '''
     if len(sys.argv) == 3 and sys.argv[1] == '-p':
         path = sys.argv[2]
@@ -26,7 +33,8 @@ def get_path_of(file_name: str, ignore_existence: bool = False) -> str:
             elif os.path.exists(file_path):
                 return file_path
             else:
-                print('Error: The file does not exist. The current recognized file path is ', file_path)
+                print('Error: The file does not exist.')
+                print('The current recognized file path is ', file_path)
                 sys.exit(1)
         else:
             print('Error: The path does not exist.')
@@ -42,11 +50,19 @@ def process_docs(documents: dict, stopwords: list) -> dict:
     '''
     This function is for conducting several preprocessing steps on the documents.
     The steps include removing punctuation, digits, stopwords, and stemming.
+
+    Args:
+    documents (dict): a dictionary containing the document ID and the words in the document.
+    stopwords (list): a list of stopwords.
+
+    Returns:
+    dict: a dictionary containing the document ID and the processed words in the document.
     '''
+    p = porter.PorterStemmer()
     result = {}
     stopwords_set = set(stopwords) # Using set to make the process faster
     # A translation table containing the rules for removing punctuation and digits
-    translation_table = str.maketrans('', '', string.punctuation + string.digits)
+    translation_table = str.maketrans('', '', string.punctuation) # TODO Remove digits?
 
     for document_name, words in documents.items():
         processed_words = []
@@ -65,13 +81,21 @@ def process_docs(documents: dict, stopwords: list) -> dict:
     return result
 
 
-def build_inverted_document_index(processed_documents: dict, k: float = 1.0) -> dict:
+def build_inverted_document_index(processed_documents: dict, k: float = 1.0, b: float = 0.75) -> dict:
     '''
     This function is for building the inverted index of the documents.
     The inverted index will be stored in a dictionary where the key is the term 
     and the value is a dictionary containing the document ID and the BM25 term frequency.
+
+    Args:
+    processed_documents (dict): a dictionary containing the document ID and the words processed by process_docs in the document.
+    k (float): a constant value for BM25 (default 1.0).
+
+    Returns:
+    dict: a dictionary containing the term and the document ID with the BM25 term frequency.
     '''
     inverted_index = {}
+    avg_doclen = sum([len(terms) for terms in processed_documents.values()]) / len(processed_documents) # Compute the average document length
     
     for document_id, terms in processed_documents.items():
         term_freq = {}
@@ -82,10 +106,10 @@ def build_inverted_document_index(processed_documents: dict, k: float = 1.0) -> 
             else:
                 term_freq[term] = 1
                 
-        # Compute term frequency in BM25
-        bm25_term_freq = {term: (freq * (k + 1)) / (freq + k) for term, freq in term_freq.items()}
+        # Compute the BM25 score for each term
+        bm25_scores = {term: (freq * (k + 1)) / (freq + k * ((1 - b) + (b * len(processed_documents[document_id]) / avg_doclen))) for term, freq in term_freq.items()}
         
-        for term, bm25_freq in bm25_term_freq.items():
+        for term, bm25_freq in bm25_scores.items():
             if term in inverted_index:
                 inverted_index[term][document_id] = bm25_freq
             else:
@@ -99,11 +123,18 @@ def compute_idf(inverted_index: dict, total_docs: int) -> dict:
     '''
     This function computes the inverse document frequency (or IDF) of the terms in the given inverted index.
     The IDF value here is calculated in alignment with the BM25 formula.
+
+    Args:
+    inverted_index (dict): a dictionary containing the term and the document ID with the BM25 term frequency.
+    total_docs (int): the total number of documents.
+
+    Returns:
+    dict: a dictionary containing the term and the corresponding IDF value.
     '''
     idf = {}
     
     for term in inverted_index:
-        idf[term] = 1 + (total_docs - len(inverted_index[term]) + 0.5) / (len(inverted_index[term]) + 0.5)
+        idf[term] = math.log(1 + (total_docs - len(inverted_index[term]) + 0.5) / (len(inverted_index[term]) + 0.5))
     
     return idf
     
