@@ -4,6 +4,7 @@ import os
 import string
 import sys
 import ast
+from collections import Counter
 from files import porter
 
 
@@ -99,6 +100,35 @@ def process_query(stopwords:list, query: str) -> list:
     return result
 
 
+def find_relevant_documents(documents: dict, processed_query: list) -> dict:
+    '''
+    This function is for finding the relevant documents according to the given query.
+    Since the BM25 scores are already computed, we only need to find the documents that contain the query words 
+    and do some simple processing.
+
+    Args:
+    documents (dict): a dictionary containing the terms with the document IDs and their BM25 scores regarding the term.
+    processed_query (list): a list containing the processed query words.
+
+    Returns:
+    dict: a dictionary containing the relevant document IDs and their BM25 similarity scores.
+    '''
+    result = {}
+    for query_word in processed_query:
+        if query_word in documents:
+            result[query_word] = documents[query_word]
+    
+    # Map the values in result to Counters
+    counters = map(Counter, result.values())
+
+    # Merge the Counters
+    merged_counter = dict(sum(counters, Counter()))
+
+    # Sort the merged Counter by the BM25 score
+    merged_counter = dict(sorted(merged_counter.items(), key=lambda item: item[1], reverse=True))
+
+    return merged_counter
+
 
 
 
@@ -110,18 +140,8 @@ if __name__ == '__main__':
     with open(get_path_of('files/stopwords.txt'), 'r') as file:
         stopwords = [word.strip() for word in file.readlines()]
 
-    print(process_query(stopwords, 'experienced software developer'))
+    print(process_query(stopwords, 'what similarity laws must be obeyed when constructing aeroelastic models of heated high speed aircraft'))
 
-    # # Load the documents
-    # with open(get_path_of('21207464-small.index'), 'r') as file:
-    #     documents_contents = file.read().strip()
-    
-    # # Find the position of the first colon
-    # colon_pos = documents_contents.find(':')
-    
-    # # Extract the part of the string after the colon
-    # dict_str = documents_contents[colon_pos + 1:].strip()
-    
-    # # Use ast.literal_eval to safely evaluate the string as a Python dictionary
-    # dictionary = ast.literal_eval(dict_str)
-    # print(dictionary)
+    # Load the documents
+    with open(path, 'r') as file:
+        documents = ast.literal_eval(file.read())
