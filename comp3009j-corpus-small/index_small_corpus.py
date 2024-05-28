@@ -62,7 +62,7 @@ def process_docs(documents: dict, stopwords: list) -> dict:
     result = {}
     stopwords_set = set(stopwords) # Using set to make the process faster
     # A translation table containing the rules for removing punctuation and digits
-    translation_table = str.maketrans('', '', string.punctuation + string.digits) # TODO Remove digits?
+    translation_table = str.maketrans('', '', string.punctuation)
 
     for document_name, words in documents.items():
         processed_words = []
@@ -157,9 +157,14 @@ def build_bm25_similarity_index(idf: dict, inverted_index: dict) -> dict:
     
     for term in idf:
         similarity_index[term] = {}
+
         for doc in inverted_index[term]:
             similarity_index[term][doc] = idf[term] * inverted_index[term][doc]
-    
+        
+        # Sort the index by the BM25 similarity score
+        similarity_index[term] = dict(sorted(similarity_index[term].items(), key=lambda x: x[1], reverse=True))
+
+
     return similarity_index
 
 
