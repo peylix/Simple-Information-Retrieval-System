@@ -84,21 +84,21 @@ def process_query(stopwords:list, query: str) -> list:
     stopwords_set = set(stopwords)
     translation_table = str.maketrans('', '', string.punctuation)
 
-    for words in query.items():
-        processed_words = []
-        for word in words:
-            # Remove punctuation using the translation table
-            # And convert the word to its lowercase
-            word = word.lower().translate(translation_table)
-            
-            # Remove stopwords and check if the word is not empty
-            if word and word not in stopwords_set:
-                stemmed_word = p.stem(word)
-                processed_words.append(stemmed_word)
+    for word in query.split():
+        # Remove punctuation using the translation table
+        # And convert the word to its lowercase
+        word = word.lower().translate(translation_table)
         
-        result.append(processed_words)
+        # Remove stopwords and check if the word is not empty
+        if word and word not in stopwords_set:
+            # Stem the word
+            stemmed_word = p.stem(word)
+            # Add the stemmed word to the result
+            result.append(stemmed_word)
 
     return result
+
+
 
 
 
@@ -110,16 +110,18 @@ if __name__ == '__main__':
     with open(get_path_of('files/stopwords.txt'), 'r') as file:
         stopwords = [word.strip() for word in file.readlines()]
 
-    # Load the documents
-    with open(get_path_of('21207464-small.index'), 'r') as file:
-        documents_contents = file.read().strip()
+    print(process_query(stopwords, 'experienced software developer'))
+
+    # # Load the documents
+    # with open(get_path_of('21207464-small.index'), 'r') as file:
+    #     documents_contents = file.read().strip()
     
-    # Find the position of the first colon
-    colon_pos = documents_contents.find(':')
+    # # Find the position of the first colon
+    # colon_pos = documents_contents.find(':')
     
-    # Extract the part of the string after the colon
-    dict_str = documents_contents[colon_pos + 1:].strip()
+    # # Extract the part of the string after the colon
+    # dict_str = documents_contents[colon_pos + 1:].strip()
     
-    # Use ast.literal_eval to safely evaluate the string as a Python dictionary
-    dictionary = ast.literal_eval(dict_str)
-    print(dictionary)
+    # # Use ast.literal_eval to safely evaluate the string as a Python dictionary
+    # dictionary = ast.literal_eval(dict_str)
+    # print(dictionary)
