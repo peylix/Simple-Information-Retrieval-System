@@ -62,7 +62,7 @@ def process_docs(documents: dict, stopwords: list) -> dict:
     result = {}
     stopwords_set = set(stopwords) # Using set to make the process faster
     # A translation table containing the rules for removing punctuation and digits
-    translation_table = str.maketrans('', '', string.punctuation) # TODO Remove digits?
+    translation_table = str.maketrans('', '', string.punctuation + string.digits) # TODO Remove digits?
 
     for document_name, words in documents.items():
         processed_words = []
@@ -107,7 +107,8 @@ def build_inverted_document_index(processed_documents: dict, k: float = 1.0, b: 
                 term_freq[term] = 1
                 
         # Compute the BM25 score for each term
-        bm25_scores = {term: (freq * (k + 1)) / (freq + k * ((1 - b) + (b * len(processed_documents[document_id]) / avg_doclen))) for term, freq in term_freq.items()}
+        bm25_scores = {term: ((freq * (k + 1)) / (freq + k * ((1 - b) + (b * len(processed_documents[document_id]) / avg_doclen))))
+                       for term, freq in term_freq.items()}
         
         for term, bm25_freq in bm25_scores.items():
             if term in inverted_index:
@@ -138,6 +139,29 @@ def compute_idf(inverted_index: dict, total_docs: int) -> dict:
     
     return idf
     
+
+def build_bm25_similarity_index(idf: dict, inverted_index: dict) -> dict:
+    '''
+    This function is for building the BM25 similarity index of the documents.
+    The BM25 similarity index will be stored in a dictionary where the key is the term 
+    and the value is a dictionary containing the document ID and the BM25 similarity score.
+
+    Args:
+    idf (dict): a dictionary containing the term and the corresponding IDF value.
+    inverted_index (dict): a dictionary containing the term and the document ID with the BM25 term frequency.
+
+    Returns:
+    dict: a dictionary containing the term and the document ID with the BM25 similarity score.
+    '''
+    similarity_index = {}
+    
+    for term in idf:
+        similarity_index[term] = {}
+        for doc in inverted_index[term]:
+            similarity_index[term][doc] = idf[term] * inverted_index[term][doc]
+    
+    return similarity_index
+
 
 if __name__ == '__main__':
     start_time = time.process_time()
@@ -177,11 +201,16 @@ if __name__ == '__main__':
     merged = {}
     for term in idf:
         merged[term] = {'idf': idf[term], 'docs': inverted_indexes[term]}
+    
+    # Build the BM25 similarity index
+    similarity_index = build_bm25_similarity_index(idf, inverted_indexes)
 
     # Write the documents to a file
     with open(get_path_of('21207464-small.index', ignore_existence=True), 'w') as file:
-        for term in merged:
-            file.write(f'{term}: {merged[term]}\n')
+        # for term in merged:
+        #     file.write(f'{term}: {merged[term]}\n')
+        for term in similarity_index:
+            file.write(f'{term}: {similarity_index[term]}\n')
     
     end_time = time.process_time()
     print(f'Indexing completed in {end_time - start_time} seconds.')
