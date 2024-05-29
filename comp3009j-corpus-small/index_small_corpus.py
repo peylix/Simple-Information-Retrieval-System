@@ -5,6 +5,7 @@ import sys
 import string
 import time
 import math
+import json
 from files import porter
 
 
@@ -140,11 +141,11 @@ def compute_idf(inverted_index: dict, total_docs: int) -> dict:
     return idf
     
 
-def build_bm25_similarity_index(idf: dict, inverted_index: dict) -> dict:
+def build_bm25_weight_index(idf: dict, inverted_index: dict) -> dict:
     '''
-    This function is for building the BM25 similarity index of the documents.
-    The BM25 similarity index will be stored in a dictionary where the key is the term 
-    and the value is a dictionary containing the document ID and the BM25 similarity score.
+    This function is for building the BM25 weight index of the documents.
+    The BM25 weight index will be stored in a dictionary where the key is the term 
+    and the value is a dictionary containing the document ID and the BM25 weights.
 
     Args:
     idf (dict): a dictionary containing the term and the corresponding IDF value.
@@ -208,14 +209,15 @@ if __name__ == '__main__':
         merged[term] = {'idf': idf[term], 'docs': inverted_indexes[term]}
     
     # Build the BM25 similarity index
-    similarity_index = build_bm25_similarity_index(idf, inverted_indexes)
+    similarity_index = build_bm25_weight_index(idf, inverted_indexes)
 
     # Write the documents to a file
     with open(get_path_of('21207464-small.index', ignore_existence=True), 'w') as file:
         # for term in merged:
         #     file.write(f'{term}: {merged[term]}\n')
-        for term in similarity_index:
-            file.write(f'{term}: {similarity_index[term]}\n')
+        # for term in similarity_index:
+        #     file.write(f'"{term}": {similarity_index[term]}\n')
+        json.dump(similarity_index, file, indent=4)
     
     end_time = time.process_time()
     print(f'Indexing completed in {end_time - start_time} seconds.')
