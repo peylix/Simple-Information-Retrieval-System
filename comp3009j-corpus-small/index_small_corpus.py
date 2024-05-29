@@ -171,7 +171,7 @@ def build_bm25_weight_index(idf: dict, inverted_index: dict) -> dict:
 
 if __name__ == '__main__':
     start_time = time.process_time()
-    print("Start indexing...")
+    print("+----------Start indexing...----------+")
 
     # Load the stopwords
     with open(get_path_of('files/stopwords.txt'), 'r') as file:
@@ -221,3 +221,5 @@ if __name__ == '__main__':
     
     end_time = time.process_time()
     print(f'Indexing completed in {end_time - start_time} seconds.')
+    
+    print("+----------Indexing completed.----------+")
