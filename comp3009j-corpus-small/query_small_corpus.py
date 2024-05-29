@@ -3,7 +3,8 @@
 import os
 import string
 import sys
-import ast
+import json
+import time
 from collections import Counter
 from files import porter
 
@@ -117,6 +118,8 @@ def find_relevant_documents(documents: dict, processed_query: list) -> dict:
     for query_word in processed_query:
         if query_word in documents:
             result[query_word] = documents[query_word]
+        else:
+            result[query_word] = {}
     
     # Map the values in result to Counters
     counters = map(Counter, result.values())
@@ -130,9 +133,36 @@ def find_relevant_documents(documents: dict, processed_query: list) -> dict:
     return merged_counter
 
 
+def format_output(current_query_number: int, relevant_documents: dict, mode: str) -> str:
+    '''
+    This function is for adjusting the relevant documents to make it align with the required format.
+
+    Args:
+    relevant_documents (dict): a dictionary containing the relevant document IDs and their BM25 similarity scores.
+
+    Returns:
+    str: the formatted output.
+    '''
+    result = ''
+    rank_count = 1
+    if mode == 'automatic':
+        for document_id, score in relevant_documents.items():
+            result += f'{current_query_number} {document_id} {rank_count} {score}\n'
+            rank_count += 1
+    elif mode == 'interactive':
+        for document_id, score in relevant_documents.items():
+            result += f'{rank_count} {document_id} {score}\n'
+            rank_count += 1
+            if rank_count > 15:
+                break
+    return result
+    
 
 
 if __name__ == '__main__':
+    start_time = time.process_time()
+    print("+----------Start querying...----------+")
+
     mode = get_mode()
     path = get_path_of('documents')
 
@@ -140,8 +170,42 @@ if __name__ == '__main__':
     with open(get_path_of('files/stopwords.txt'), 'r') as file:
         stopwords = [word.strip() for word in file.readlines()]
 
-    print(process_query(stopwords, 'what similarity laws must be obeyed when constructing aeroelastic models of heated high speed aircraft'))
-
     # Load the documents
-    with open(path, 'r') as file:
-        documents = ast.literal_eval(file.read())
+    with open(get_path_of('21207464-small.index'), 'r') as file:
+        documents = json.load(file)
+    current_time = time.process_time()
+    print(f'{len(documents)} documents are loaded in {current_time - start_time} seconds.')
+
+    if mode == 'automatic':
+        print('**You are using the automatic mode. The queries will be carried out automatically.**')
+        queries = {}
+        with open(get_path_of('files/queries.txt'), 'r') as file:
+            for line in file:
+                line = line.strip()
+                # Split the line into two parts
+                # The first part is the query ID (key) and the second part is the query (value)
+                query_id, query = line.split(maxsplit=1)
+                queries[query_id] = query
+        current_time = time.process_time()
+        print(f'{len(queries)} queries are loaded in {current_time - start_time} seconds.')
+
+        with open(get_path_of('21207464-small.results', ignore_existence=True), 'w') as file:
+            for query_id, query in queries.items():
+                processed_query = process_query(stopwords, query)
+                relevant_documents = find_relevant_documents(documents, processed_query)
+                file.write(format_output(int(query_id), relevant_documents, mode='automatic'))
+        end_time = time.process_time()
+        print(f'The results are computed in {end_time - start_time} seconds.')
+    elif mode == 'interactive':
+        print('**You are using the interactive mode. Enter "QUIT" to exit.**')
+        while True:
+            query = input('> Please enter your query: ')
+            if query == 'QUIT':
+                break
+            processed_query = process_query(stopwords, query)
+            relevant_documents = find_relevant_documents(documents, processed_query)
+            print(format_output(1, relevant_documents, mode='interactive'))
+            current_time = time.process_time()
+            print(f'This query is processed in {current_time - start_time} seconds.')
+    
+    print("+----------Querying Ended.----------+")
