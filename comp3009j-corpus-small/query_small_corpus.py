@@ -5,6 +5,7 @@ import string
 import sys
 import json
 import time
+
 from collections import Counter
 from files import porter
 
@@ -106,6 +107,7 @@ def find_relevant_documents(documents: dict, processed_query: list) -> dict:
     This function is for finding the relevant documents according to the given query.
     Since the BM25 scores are already computed, we only need to find the documents that contain the query words 
     and do some simple processing.
+    I use Counter to store the BM25 scores to avoid duplicates and boost the performance as well as make the code neater.
 
     Args:
     documents (dict): a dictionary containing the terms with the document IDs and their BM25 scores regarding the term.
@@ -114,23 +116,42 @@ def find_relevant_documents(documents: dict, processed_query: list) -> dict:
     Returns:
     dict: a dictionary containing the relevant document IDs and their BM25 similarity scores.
     '''
-    result = {}
+    result = Counter() # Using Counter to store the BM25 scores to avoid duplicates
+
     for query_word in processed_query:
         if query_word in documents:
-            result[query_word] = documents[query_word]
-        else:
-            result[query_word] = {}
+            result.update(documents[query_word])
     
-    # Map the values in result to Counters
-    counters = map(Counter, result.values())
+    # Sort the result by the BM25 score
+    sorted_result = dict(result.most_common())
 
-    # Merge the Counters
-    merged_counter = dict(sum(counters, Counter()))
+    return sorted_result
 
-    # Sort the merged Counter by the BM25 score
-    merged_counter = dict(sorted(merged_counter.items(), key=lambda item: item[1], reverse=True))
 
-    return merged_counter
+# def find_relevant_documents_ignore_duplicate(documents: dict, processed_query: list) -> dict:
+#     '''
+#     This function is for finding the relevant documents according to the given query.
+#     Since the BM25 scores are already computed, we only need to find the documents that contain the query words 
+#     and do some simple processing.
+
+#     Args:
+#     documents (dict): a dictionary containing the terms with the document IDs and their BM25 scores regarding the term.
+#     processed_query (list): a list containing the processed query words.
+
+#     Returns:
+#     dict: a dictionary containing the relevant document IDs and their BM25 similarity scores.
+#     '''
+#     result = Counter()
+#     seen_words = set()  # Set to track processed query words
+    
+#     for query_word in processed_query:
+#         if query_word not in seen_words and query_word in documents:
+#             seen_words.add(query_word)
+#             result.update(documents[query_word])
+    
+#     # Sort the result by the BM25 score
+#     sorted_result = dict(result.most_common())
+#     return sorted_result
 
 
 def format_output(current_query_number: int, relevant_documents: dict, mode: str) -> str:
@@ -179,6 +200,7 @@ if __name__ == '__main__':
     if mode == 'automatic':
         print('**You are using the automatic mode. The queries will be carried out automatically.**')
         queries = {}
+        # TODO Use one loop to read the queries and write the results
         with open(get_path_of('files/queries.txt'), 'r') as file:
             for line in file:
                 line = line.strip()
@@ -194,6 +216,7 @@ if __name__ == '__main__':
                 processed_query = process_query(stopwords, query)
                 relevant_documents = find_relevant_documents(documents, processed_query)
                 file.write(format_output(int(query_id), relevant_documents, mode='automatic'))
+
         end_time = time.process_time()
         print(f'The results are computed in {end_time - start_time} seconds.')
     elif mode == 'interactive':

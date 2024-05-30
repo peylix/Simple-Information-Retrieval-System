@@ -161,3 +161,9 @@ cython_debug/
 
 # macOS
 *.DS_Store
+
+# PyCharm files
+.idea/
+
+# Python cache
+__pycache__/
