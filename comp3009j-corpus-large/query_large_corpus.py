@@ -201,19 +201,18 @@ if __name__ == '__main__':
     if mode == 'automatic':
         print('**You are using the automatic mode. The queries will be carried out automatically.**')
         queries = {}
-        # TODO Use one loop to read the queries and write the results
+        
         with open(get_path_of('files/queries.txt'), 'r') as file:
-            for line in file:
-                line = line.strip()
-                # Split the line into two parts
-                # The first part is the query ID (key) and the second part is the query (value)
-                query_id, query = line.split(maxsplit=1)
-                queries[query_id] = query
+            lines = file.readlines()
+
         current_time = time.process_time()
-        print(f'{len(queries)} queries are loaded in {current_time - start_time} seconds.')
+        print(f'{len(lines)} queries are loaded in {current_time - start_time} seconds.')
 
         with open(get_path_of('21207464-large.results', ignore_existence=True), 'w') as file:
-            for query_id, query in queries.items():
+            for line in lines:
+                # Split the line into two parts
+                # The first part is the query ID and the second part is the query
+                query_id, query = line.strip().split(maxsplit=1)
                 processed_query = process_query(stopwords, query)
                 relevant_documents = find_relevant_documents(built_index, processed_query)
                 file.write(format_output(int(query_id), relevant_documents, mode='automatic'))
