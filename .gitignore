@@ -167,3 +167,7 @@ cython_debug/
 
 # Python cache
 __pycache__/
+
+# For this project
+*.index
+*.results
