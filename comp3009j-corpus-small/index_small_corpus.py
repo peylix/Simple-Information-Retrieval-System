@@ -61,23 +61,16 @@ def process_docs(documents: dict, stopwords: list) -> dict:
     dict: a dictionary containing the document ID and the processed words in the document.
     '''
     p = porter.PorterStemmer()
-    result = {}
-    stopwords_set = set(stopwords) # Using set to make the process faster
-    # A translation table containing the rules for removing punctuation and digits
-    translation_table = str.maketrans('', '', string.punctuation)
+    stopwords_set = set(stopwords)  # Using set to make the process faster
+    # A translation table for removing punctuation and digits
+    translation_table = str.maketrans('', '', string.punctuation + string.digits)
 
+    result = {}
     for document_name, words in documents.items():
-        processed_words = []
-        for word in words:
-            # Remove punctuation and digits using the translation table
-            # And convert the word to its lowercase
-            word = word.lower().translate(translation_table)
-            
-            # Remove stopwords and check if the word is not empty
-            if word and word not in stopwords_set:
-                stemmed_word = p.stem(word)
-                processed_words.append(stemmed_word)
-        
+        processed_words = [
+            p.stem(word.translate(translation_table).lower())
+            for word in words if word.translate(translation_table).lower() not in stopwords_set and word.translate(translation_table).lower()
+        ]
         result[document_name] = processed_words
 
     return result
@@ -186,6 +179,8 @@ if __name__ == '__main__':
             with open(file_path, 'r') as file:
                 content = file.read()
                 documents[document] = content.split()
+    with open(get_path_of('document_list.txt', ignore_existence=True), 'w') as file:
+        json.dump(documents, file, indent=4)
     current_time = time.process_time()
     print(f'{len(documents)} documents are loaded in {current_time - start_time} seconds.')
 
