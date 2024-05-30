@@ -76,11 +76,10 @@ def process_docs(documents: dict, stopwords: list) -> dict:
             
             # Remove stopwords and check if the word is not empty
             if word and word not in stopwords_set:
-                # Check if the stemmed word is in the cache
-                stemmed_word = stemmed_words_cache.get(word)
-                if stemmed_word is None:
-                    stemmed_word = p.stem(word)
-                    stemmed_words_cache[word] = stemmed_word
+                if word not in stemmed_words_cache:
+                    stemmed_words_cache[word] = p.stem(word)
+                stemmed_word = stemmed_words_cache[word]
+                processed_words.append(stemmed_word)
         
         result[document_name] = processed_words
 
@@ -222,16 +221,12 @@ if __name__ == '__main__':
     for term in idf:
         merged[term] = {'idf': idf[term], 'docs': inverted_indexes[term]}
     
-    # Build the BM25 similarity index
-    similarity_index = build_bm25_weight_index(idf, inverted_indexes)
+    # Build the BM25 weights index
+    weights_index = build_bm25_weight_index(idf, inverted_indexes)
 
     # Write the documents to a file
     with open(get_path_of('21207464-large.index', ignore_existence=True), 'w') as file:
-        # for term in merged:
-        #     file.write(f'{term}: {merged[term]}\n')
-        # for term in similarity_index:
-        #     file.write(f'"{term}": {similarity_index[term]}\n')
-        json.dump(similarity_index, file, indent=4)
+        json.dump(weights_index, file, indent=4)
     
     end_time = time.process_time()
     print(f'Indexing completed in {end_time - start_time} seconds.')

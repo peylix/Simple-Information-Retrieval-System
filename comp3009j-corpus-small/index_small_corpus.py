@@ -61,16 +61,26 @@ def process_docs(documents: dict, stopwords: list) -> dict:
     dict: a dictionary containing the document ID and the processed words in the document.
     '''
     p = porter.PorterStemmer()
-    stopwords_set = set(stopwords)  # Using set to make the process faster
-    # A translation table for removing punctuation and digits
-    translation_table = str.maketrans('', '', string.punctuation + string.digits)
-
     result = {}
+    stemmed_words_cache = {}
+    stopwords_set = set(stopwords) # Using set to make the process faster
+    # A translation table containing the rules for removing punctuation and digits
+    translation_table = str.maketrans('', '', string.punctuation)
+
     for document_name, words in documents.items():
-        processed_words = [
-            p.stem(word.translate(translation_table).lower())
-            for word in words if word.translate(translation_table).lower() not in stopwords_set and word.translate(translation_table).lower()
-        ]
+        processed_words = []
+        for word in words:
+            # Remove punctuation and digits using the translation table
+            # And convert the word to its lowercase
+            word = word.lower().translate(translation_table)
+            
+            # Remove stopwords and check if the word is not empty
+            if word and word not in stopwords_set:
+                if word not in stemmed_words_cache:
+                    stemmed_words_cache[word] = p.stem(word)
+                stemmed_word = stemmed_words_cache[word]
+                processed_words.append(stemmed_word)
+        
         result[document_name] = processed_words
 
     return result
@@ -204,8 +214,8 @@ if __name__ == '__main__':
     for term in idf:
         merged[term] = {'idf': idf[term], 'docs': inverted_indexes[term]}
     
-    # Build the BM25 similarity index
-    similarity_index = build_bm25_weight_index(idf, inverted_indexes)
+    # Build the BM25 weights index
+    weights_index = build_bm25_weight_index(idf, inverted_indexes)
 
     # Write the documents to a file
     with open(get_path_of('21207464-small.index', ignore_existence=True), 'w') as file:
@@ -213,7 +223,7 @@ if __name__ == '__main__':
         #     file.write(f'{term}: {merged[term]}\n')
         # for term in similarity_index:
         #     file.write(f'"{term}": {similarity_index[term]}\n')
-        json.dump(similarity_index, file, indent=4)
+        json.dump(weights_index, file, indent=4)
     
     end_time = time.process_time()
     print(f'Indexing completed in {end_time - start_time} seconds.')
