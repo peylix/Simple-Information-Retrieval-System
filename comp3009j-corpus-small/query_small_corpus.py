@@ -102,7 +102,7 @@ def process_query(stopwords:list, query: str) -> list:
     return result
 
 
-def find_relevant_documents(documents: dict, processed_query: list) -> dict:
+def find_relevant_documents(index: dict, processed_query: list) -> dict:
     '''
     This function is for finding the relevant documents according to the given query.
     Since the BM25 scores are already computed, we only need to find the documents that contain the query words 
@@ -119,8 +119,8 @@ def find_relevant_documents(documents: dict, processed_query: list) -> dict:
     result = Counter() # Using Counter to store the BM25 scores to avoid duplicates
 
     for query_word in processed_query:
-        if query_word in documents:
-            result.update(documents[query_word])
+        if query_word in index:
+            result.update(index[query_word])
     
     # Sort the result by the BM25 score
     sorted_result = dict(result.most_common())
@@ -193,9 +193,9 @@ if __name__ == '__main__':
 
     # Load the documents
     with open(get_path_of('21207464-small.index'), 'r') as file:
-        documents = json.load(file)
+        built_index = json.load(file)
     current_time = time.process_time()
-    print(f'{len(documents)} documents are loaded in {current_time - start_time} seconds.')
+    print(f'{len(built_index)} terms are loaded in {current_time - start_time} seconds.')
 
     if mode == 'automatic':
         print('**You are using the automatic mode. The queries will be carried out automatically.**')
@@ -214,7 +214,7 @@ if __name__ == '__main__':
         with open(get_path_of('21207464-small.results', ignore_existence=True), 'w') as file:
             for query_id, query in queries.items():
                 processed_query = process_query(stopwords, query)
-                relevant_documents = find_relevant_documents(documents, processed_query)
+                relevant_documents = find_relevant_documents(built_index, processed_query)
                 file.write(format_output(int(query_id), relevant_documents, mode='automatic'))
 
         end_time = time.process_time()
@@ -226,7 +226,7 @@ if __name__ == '__main__':
             if query == 'QUIT':
                 break
             processed_query = process_query(stopwords, query)
-            relevant_documents = find_relevant_documents(documents, processed_query)
+            relevant_documents = find_relevant_documents(built_index, processed_query)
             print(format_output(1, relevant_documents, mode='interactive'))
             current_time = time.process_time()
             print(f'This query is processed in {current_time - start_time} seconds.')
