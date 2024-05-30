@@ -189,8 +189,7 @@ if __name__ == '__main__':
             with open(file_path, 'r') as file:
                 content = file.read()
                 documents[document] = content.split()
-    with open(get_path_of('document_list.txt', ignore_existence=True), 'w') as file:
-        json.dump(documents, file, indent=4)
+
     current_time = time.process_time()
     print(f'{len(documents)} documents are loaded in {current_time - start_time} seconds.')
 
