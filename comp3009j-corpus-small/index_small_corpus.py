@@ -156,21 +156,21 @@ def build_bm25_weight_index(idf: dict, inverted_index: dict) -> dict:
     inverted_index (dict): a dictionary containing the term and the document ID with the BM25 term frequency.
 
     Returns:
-    dict: a dictionary containing the term and the document ID with the BM25 similarity score.
+    dict: a dictionary containing the term and the document ID with the BM25 weights.
     '''
-    similarity_index = {}
+    weight_index = {}
     
     for term in idf:
-        similarity_index[term] = {}
+        weight_index[term] = {}
 
         for doc in inverted_index[term]:
-            similarity_index[term][doc] = idf[term] * inverted_index[term][doc]
+            weight_index[term][doc] = idf[term] * inverted_index[term][doc]
         
-        # Sort the index by the BM25 similarity score
-        similarity_index[term] = dict(sorted(similarity_index[term].items(), key=lambda x: x[1], reverse=True))
+        # Sort the index by the BM25 weights
+        weight_index[term] = dict(sorted(weight_index[term].items(), key=lambda x: x[1], reverse=True))
 
 
-    return similarity_index
+    return weight_index
 
 
 if __name__ == '__main__':
