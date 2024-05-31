@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import math
 import sys
 import os
 
@@ -40,106 +41,48 @@ def get_path_of(file_name: str, ignore_existence: bool = False) -> str:
         sys.exit(1)
 
 
-def precision(ret: list, rel: list) -> float:
+def precision(ret: dict, rel: dict) -> float:
     '''
     This function calculates the precision of the retrieved documents.
     It means the proportion of the retrieved documents that are relevant.
 
     Args:
-    ret (list): a list of retrieved documents.
-    rel (list): a list of relevant documents.
+    ret (dict): a dictionary of retrieved documents in the format of {query_id: {doc_id: score}}.
+    rel (dict): a dictionary of relevant documents in the format of {query_id: {doc_id: relevance}}.
 
     Returns:
     float: the precision.
     '''
-    return len(set(ret) & set(rel)) / len(ret)
+    total_precision = 0
+    for query_id in ret.keys():
+        rel_ret = 0
+        for doc_id in ret[query_id]:
+            if doc_id in rel[query_id]:
+                rel_ret += 1
+        total_precision += rel_ret / len(ret[query_id])
+    return total_precision / len(ret)
 
 
-def recall(ret: list, rel: list) -> float:
+def recall(ret: dict, rel: dict) -> float:
     '''
     This function calculates the recall of the retrieved documents.
     It means the proportion of the relevant documents that are retrieved.
 
     Args:
-    ret (list): a list of retrieved documents.
-    rel (list): a list of relevant documents.
+    ret (dict): a dictionary of retrieved documents.
+    rel (dict): a dictionary of relevant documents.
 
     Returns:
     float: the recall.
     '''
-    return len(set(ret) & set(rel)) / len(rel)
-
-
-def r_precision(ret: list, rel: list) -> float:
-    '''
-    This function calculates the R-Precision of the retrieved documents.
-    It means how many relevant documents among the top R documents, 
-    where R is the number of relevant documents.
-
-    Args:
-    ret (list): a list of retrieved documents.
-    rel (list): a list of relevant documents.
-
-    Returns:
-    float: the R-Precision.
-    '''
-    return len(set(ret[:len(rel)]) & set(rel)) / len(rel)
-
-
-def precision_at_15(ret: list, rel: list) -> float:
-    '''
-    This function calculates the precision at 15 of the retrieved documents.
-    It means the proportion of the first 15 retrieved documents that are relevant.
-
-    Args:
-    ret (list): a list of retrieved documents.
-    rel (list): a list of relevant documents.
-
-    Returns:
-    float: the precision at 15.
-    '''
-    return len(set(ret[:15]) & set(rel)) / 15
-
-
-def ndcg_at_15(ret: list, rel: list) -> float:
-    '''
-    This function calculates the Normalized Discounted Cumulative Gain (NDCG) at 15 of the retrieved documents.
-    It means how well the retrieved documents are ranked based on the relevance.
-
-    Args:
-    ret (list): a list of retrieved documents.
-    rel (list): a list of relevant documents.
-
-    Returns:
-    float: the NDCG at 15.
-    '''
-    dcg = 0
-    for i, doc in enumerate(ret[:15]):
-        if doc in rel:
-            dcg += 1 / (i + 1)
-    idcg = sum([1 / (i + 1) for i in range(min(len(rel), 15))])
-    return dcg / idcg
-
-
-def mean_average_precision(ret: list, rel: list) -> float:
-    '''
-    This function calculates the Mean Average Precision (MAP) of the retrieved documents.
-    It means the average of the precision at each relevant document.
-
-    Args:
-    ret (list): a list of retrieved documents.
-    rel (list): a list of relevant documents.
-
-    Returns:
-    float: the MAP.
-    '''
-    precision_sum = 0
-    relevant_count = 0
-    for i, doc in enumerate(ret):
-        if doc in rel:
-            relevant_count += 1
-            precision_sum += relevant_count / (i + 1)
-    return precision_sum / len(rel)
+    total_recall = 0
+    for query_id in ret.keys():
+        rel_ret = 0
+        for doc_id in ret[query_id]:
+            if doc_id in rel[query_id]:
+                rel_ret += 1
+        total_recall += rel_ret / len(rel[query_id])
+    return total_recall / len(ret)
 
 
 if __name__ == '__main__':
@@ -148,12 +91,42 @@ if __name__ == '__main__':
         current_query_id = ''
         for line in file:
             query_id = line.split()[0]
+            doc_id = line.split()[1]
+            score = line.split()[3]
             if query_id != current_query_id:
                 queries_result[query_id] = {}
-                queries_result[query_id][line.split()[1]] = line.split()[3]
-            else:
-                queries_result[current_query_id][line.split()[1]] = line.split()[3]
+            queries_result[query_id][doc_id] = score
             current_query_id = query_id
+    # print(queries_result)
     
+    # Load the relevance judgments
+    relevance_judgments = {}
+    with open(get_path_of('files/qrels.txt'), 'r') as file:
+        current_query_id = ''
+        for line in file:
+            query_id = line.split()[0]
+            doc_id = line.split()[2]
+            relevance = line.split()[3]
+            if query_id != current_query_id:
+                relevance_judgments[query_id] = {}
+            relevance_judgments[query_id][doc_id] = relevance
+            current_query_id = query_id
+    # print(relevance_judgments)
+    
+    # Calculate the evaluation metrics
+    print('+----------Evaluation Metrics----------+')
+    # for query_id in queries_result:
+    #     retrieved = list(queries_result[query_id].keys())
+    #     relevant = relevance_judgments[int(query_id)]
+    #     print(f'Query {query_id}:')
+    #     print(f'Precision: {precision(retrieved, relevant)}')
+    #     print(f'Recall: {recall(retrieved, relevant)}')
+    #     print(f'R-Precision: {r_precision(retrieved, relevant)}')
+    #     print(f'Precision at 15: {precision_at_15(retrieved, relevant)}')
+    #     print(f'NDCG at 15: {ndcg_at_15(retrieved, relevant)}')
+    #     print(f'Mean Average Precision: {mean_average_precision(retrieved, relevant)}')
+    #     print()
+    print('Precision:', precision(queries_result, relevance_judgments))
+    print('Recall:', recall(queries_result, relevance_judgments))
 
-
+    print('+--------------------------------------+')
