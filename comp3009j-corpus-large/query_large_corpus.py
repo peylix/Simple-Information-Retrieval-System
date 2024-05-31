@@ -171,6 +171,8 @@ def format_output(current_query_number: int, relevant_documents: dict, mode: str
         for document_id, score in relevant_documents.items():
             result += f'{current_query_number} {document_id} {rank_count} {score}\n'
             rank_count += 1
+            if rank_count > 15:
+                break
     elif mode == 'interactive':
         for document_id, score in relevant_documents.items():
             result += f'{rank_count} {document_id} {score}\n'
