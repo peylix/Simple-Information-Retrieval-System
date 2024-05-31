@@ -90,9 +90,9 @@ if __name__ == '__main__':
     with open(get_path_of('21207464-small.results', 'r')) as file:
         current_query_id = ''
         for line in file:
-            query_id = line.split()[0]
-            doc_id = line.split()[1]
-            score = line.split()[3]
+            query_id = int(line.split()[0])
+            doc_id = int(line.split()[1])
+            score = float(line.split()[3])
             if query_id != current_query_id:
                 queries_result[query_id] = {}
             queries_result[query_id][doc_id] = score
@@ -104,9 +104,9 @@ if __name__ == '__main__':
     with open(get_path_of('files/qrels.txt'), 'r') as file:
         current_query_id = ''
         for line in file:
-            query_id = line.split()[0]
-            doc_id = line.split()[2]
-            relevance = line.split()[3]
+            query_id = int(line.split()[0])
+            doc_id = int(line.split()[2])
+            relevance = float(line.split()[3])
             if query_id != current_query_id:
                 relevance_judgments[query_id] = {}
             relevance_judgments[query_id][doc_id] = relevance
