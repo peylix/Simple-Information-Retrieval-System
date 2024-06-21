@@ -48,7 +48,6 @@ def get_path_of(file_name: str, ignore_existence: bool = False) -> str:
 
 
 def process_docs(documents: dict, stopwords: list) -> dict:
-    # TODO Optimize the function to make it faster!
     '''
     This function is for conducting several preprocessing steps on the documents.
     The steps include removing punctuation, digits, stopwords, and stemming.
