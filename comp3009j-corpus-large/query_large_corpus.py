@@ -114,7 +114,7 @@ def find_relevant_documents(index: dict, processed_query: list) -> dict:
     processed_query (list): a list containing the processed query words.
 
     Returns:
-    dict: a dictionary containing the relevant document IDs and their BM25 similarity scores.
+    dict: a dictionary containing the relevant document IDs and their BM25 weights.
     '''
     result = Counter() # Using Counter to store the BM25 scores to avoid duplicates
 
@@ -129,38 +129,13 @@ def find_relevant_documents(index: dict, processed_query: list) -> dict:
     return sorted_result
 
 
-# def find_relevant_documents_ignore_duplicate(documents: dict, processed_query: list) -> dict:
-#     '''
-#     This function is for finding the relevant documents according to the given query.
-#     Since the BM25 scores are already computed, we only need to find the documents that contain the query words 
-#     and do some simple processing.
-
-#     Args:
-#     documents (dict): a dictionary containing the terms with the document IDs and their BM25 scores regarding the term.
-#     processed_query (list): a list containing the processed query words.
-
-#     Returns:
-#     dict: a dictionary containing the relevant document IDs and their BM25 similarity scores.
-#     '''
-#     result = Counter()
-#     seen_words = set()  # Set to track processed query words
-    
-#     for query_word in processed_query:
-#         if query_word not in seen_words and query_word in documents:
-#             seen_words.add(query_word)
-#             result.update(documents[query_word])
-    
-#     # Sort the result by the BM25 score
-#     sorted_result = dict(result.most_common())
-#     return sorted_result
-
 
 def format_output(current_query_number: int, relevant_documents: dict, mode: str) -> str:
     '''
     This function is for adjusting the relevant documents to make it align with the required format.
 
     Args:
-    relevant_documents (dict): a dictionary containing the relevant document IDs and their BM25 similarity scores.
+    relevant_documents (dict): a dictionary containing the relevant document IDs and their BM25 weights.
 
     Returns:
     str: the formatted output.
@@ -185,7 +160,7 @@ def format_output(current_query_number: int, relevant_documents: dict, mode: str
 
 if __name__ == '__main__':
     start_time = time.process_time()
-    print("+----------Start querying...----------+")
+    print("+----------Start querying----------+")
 
     mode = get_mode()
     path = get_path_of('documents')
@@ -223,14 +198,17 @@ if __name__ == '__main__':
         print(f'The results are computed in {end_time - start_time} seconds.')
     elif mode == 'interactive':
         print('**You are using the interactive mode. Enter "QUIT" to exit.**')
+
         while True:
             query = input('> Please enter your query: ')
             if query == 'QUIT':
                 break
+            begin_query_time = time.process_time()
             processed_query = process_query(stopwords, query)
             relevant_documents = find_relevant_documents(built_index, processed_query)
             print(format_output(1, relevant_documents, mode='interactive'))
-            current_time = time.process_time()
-            print(f'This query is processed in {current_time - start_time} seconds.')
+
+            end_query_time = time.process_time()
+            print(f'This query is processed within {begin_query_time - end_query_time} seconds.')
     
-    print("+----------Querying Ended.----------+")
+    print("+----------Querying Ended----------+")
