@@ -36,7 +36,7 @@ def get_path_of(file_name: str, ignore_existence: bool = False) -> str:
             sys.exit(1)
     else:
         print('Error: Invalid arguments.')
-        print('You can use `./evaluate_small_corpus.py -p /path/to/comp3009j-corpus-small` to run the program.')
+        print('You can use `./evaluate_large_corpus.py -p /path/to/comp3009j-corpus-large` to run the program.')
         sys.exit(1)
 
 
@@ -86,7 +86,7 @@ def recall(ret: dict, rel: dict) -> float:
         relevant_retrieved = sum(1 for doc in retrieved_docs if doc in relevant_docs and int(relevant_docs[doc]) > 0)
         # Total number of relevant documents
         total_relevant = sum(1 for doc in relevant_docs if int(relevant_docs[doc]) > 0)
-
+        
         recall = relevant_retrieved / total_relevant
         
         total_recall += recall
@@ -174,9 +174,8 @@ def mean_average_precision(ret: dict, rel: dict) -> float:
                 relevant_documents_count += 1
                 map += relevant_documents_count / i
         total_map += map / len(rel[query_id])
-
+        
     return total_map / len(ret)
-
 
 
 def dcg_at_k(r: list, k: int) -> float:
@@ -195,6 +194,7 @@ def dcg_at_k(r: list, k: int) -> float:
     if not r:
         return 0.0
     return r[0] + sum(relevance / math.log2(rank + 1) for rank, relevance in enumerate(r[1:], start=2))
+
 
 
 def ndcg_at_k(ret: dict, rel: dict, k: int = 15) -> float:
@@ -216,9 +216,10 @@ def ndcg_at_k(ret: dict, rel: dict, k: int = 15) -> float:
         # Get relevance scores based on retrieved document ids
         actual_relevances = [rel.get(query_id, {}).get(doc_id, 0) for doc_id in retrieved_doc_ids]
         
+        # Calculate DCG
         dcg = dcg_at_k(actual_relevances, k)
         
-        # Sort documents by relevance to get IDCG
+        # Sort documents by relevance to calculate IDCG
         ideal_relevances = sorted(rel.get(query_id, {}).values(), reverse=True)
         idcg = dcg_at_k(ideal_relevances, k)
         
@@ -227,19 +228,60 @@ def ndcg_at_k(ret: dict, rel: dict, k: int = 15) -> float:
             ndcg_scores[query_id] = 0.0
         else:
             ndcg_scores[query_id] = dcg / idcg
-    
-    result =sum(ndcg_scores.values()) / len(ndcg_scores) if ndcg_scores else 0
+            
+    return sum(ndcg_scores.values()) / len(ndcg_scores) if ndcg_scores else 0
 
-    return result
+
+def bpref(ret: dict, rel: dict) -> float:
+    '''
+    This function calculates the BPREF score of the retrieved documents.
+    It means the proportion of non-relevant documents ranked lower than the relevant documents.
+
+    Args:
+    ret (dict): a dictionary of retrieved documents.
+    rel (dict): a dictionary of relevant documents.
+
+    Returns:
+    float: the BPREF score.
+    '''
+    total_bpref_score = 0
+    num_queries = 0
+
+    # Iterate through each query
+    for query_id in rel.keys():
+        relevant_docs = {doc_id for doc_id, rel in rel[query_id].items() if rel > 0}
+        non_relevant_docs = {doc_id for doc_id, rel in rel[query_id].items() if rel <= 0}
+
+        if not relevant_docs:
+            continue
+
+        num_queries += 1
+        
+        R = len(relevant_docs)
+        N = len(non_relevant_docs)
+        score_sum = 0
+
+        for r_doc in relevant_docs:
+            # Count non-relevant docs ranked lower than the relevant doc r_doc
+            count_B = sum(1 for n_doc in non_relevant_docs if ret[query_id].get(n_doc, 0) < ret[query_id].get(r_doc, 0))
+            score_sum += count_B / N if N > 0 else 0
+
+        # Calculate BPREF score for this query and add to total
+        total_bpref_score += score_sum / R if R > 0 else 0
+
+    # Calculate average BPREF score
+    average_bpref = total_bpref_score / num_queries if num_queries > 0 else 0
+    return average_bpref
+
 
 
 if __name__ == '__main__':
     queries_result = {}
-    with open(get_path_of('21207464-small.results', 'r')) as file:
+    with open(get_path_of('21207464-large.results', 'r')) as file:
         current_query_id = ''
         for line in file:
             query_id = int(line.split()[0])
-            doc_id = int(line.split()[1])
+            doc_id = line.split()[1]
             score = float(line.split()[3])
             if query_id != current_query_id:
                 queries_result[query_id] = {}
@@ -253,7 +295,7 @@ if __name__ == '__main__':
         current_query_id = ''
         for line in file:
             query_id = int(line.split()[0])
-            doc_id = int(line.split()[2])
+            doc_id = line.split()[2]
             relevance = float(line.split()[3])
             if query_id != current_query_id:
                 relevance_judgments[query_id] = {}
@@ -273,5 +315,6 @@ if __name__ == '__main__':
     print(f'P@15: {precision_at_k(queries_result, relevance_judgments, 15):.3f}')
     print(f'MAP: {mean_average_precision(queries_result, relevance_judgments):.3f}')
     print(f'NDCG@15: {ndcg_at_k(queries_result, relevance_judgments):.3f}')
+    print(f'bpref: {bpref(queries_result, relevance_judgments):.3f}')
 
     print('+--------------------------------------+')
