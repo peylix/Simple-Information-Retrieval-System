@@ -170,7 +170,7 @@ if __name__ == '__main__':
         stopwords = [word.strip() for word in file.readlines()]
 
     # Load the index
-    with open(get_path_of('21207464-large.index'), 'r') as file:
+    with open(get_path_of('<ucd_id>-large.index'), 'r') as file:
         built_index = json.load(file)
     current_time = time.process_time()
     print(f'{len(built_index)} terms are loaded in {current_time - start_time} seconds.')
@@ -185,7 +185,7 @@ if __name__ == '__main__':
         current_time = time.process_time()
         print(f'{len(lines)} queries are loaded in {current_time - start_time} seconds.')
 
-        with open(get_path_of('21207464-large.results', ignore_existence=True), 'w') as file:
+        with open(get_path_of('<ucd_id>-large.results', ignore_existence=True), 'w') as file:
             for line in lines:
                 # Split the line into two parts
                 # The first part is the query ID and the second part is the query

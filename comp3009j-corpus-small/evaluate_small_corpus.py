@@ -235,7 +235,7 @@ def ndcg_at_k(ret: dict, rel: dict, k: int = 15) -> float:
 
 if __name__ == '__main__':
     queries_result = {}
-    with open(get_path_of('21207464-small.results', 'r')) as file:
+    with open(get_path_of('<ucd_id>-small.results', 'r')) as file:
         current_query_id = ''
         for line in file:
             query_id = int(line.split()[0])

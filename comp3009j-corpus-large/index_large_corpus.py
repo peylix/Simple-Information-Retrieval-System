@@ -222,7 +222,7 @@ if __name__ == '__main__':
     weights_index = build_bm25_weight_index(idf, inverted_indexes)
 
     # Write the documents to a file
-    with open(get_path_of('21207464-large.index', ignore_existence=True), 'w') as file:
+    with open(get_path_of('<ucd_id>-large.index', ignore_existence=True), 'w') as file:
         json.dump(weights_index, file, indent=4)
     
     end_time = time.process_time()
