@@ -117,14 +117,15 @@ def find_relevant_documents(index: dict, processed_query: list) -> dict:
     dict: a dictionary containing the relevant document IDs and their BM25 weights.
     '''
     result = Counter() # Using Counter to store the BM25 scores to avoid duplicates
+    seen_words = set()  # Set to track processed query words
 
     for query_word in processed_query:
-        if query_word in index:
+        if query_word not in seen_words and query_word in index:
+            seen_words.add(query_word)
             result.update(index[query_word])
-    
+
     # Sort the result by the BM25 score
     sorted_result = dict(result.most_common())
-
     return sorted_result
 
 
