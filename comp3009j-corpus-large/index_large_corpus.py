@@ -26,7 +26,6 @@ def get_path_of(file_name: str, ignore_existence: bool = False) -> str:
     '''
     if len(sys.argv) == 3 and sys.argv[1] == '-p':
         path = sys.argv[2]
-        # print('the path is ', path)
         if os.path.exists(path):
             file_path = os.path.join(path, file_name)
 
@@ -186,16 +185,15 @@ if __name__ == '__main__':
         if files == '.DS_Store':
             continue
         for document in os.listdir(get_path_of(f'documents/{files}')):
-            # print(files)
+
             if document == '.DS_Store':
                 continue
             file_path = get_path_of(f'documents/{files}/{document}')
-            # print(file_path)
+
             if os.path.isfile(file_path):
                 with open(file_path, 'r') as file:
                     content = file.read()
                     documents[document] = content.split()
-    # print(documents)
 
     current_time = time.process_time()
     print(f'{len(documents)} documents are loaded in {current_time - start_time} seconds.')

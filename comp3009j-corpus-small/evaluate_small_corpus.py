@@ -245,7 +245,7 @@ if __name__ == '__main__':
                 queries_result[query_id] = {}
             queries_result[query_id][doc_id] = score
             current_query_id = query_id
-    # print(queries_result)
+
     
     # Load the relevance judgments
     relevance_judgments = {}
@@ -262,7 +262,7 @@ if __name__ == '__main__':
             if relevance == 0:
                 relevance_judgments[query_id].pop(doc_id)
             current_query_id = query_id
-    # print(relevance_judgments)
+
 
     
     # Calculate the evaluation metrics

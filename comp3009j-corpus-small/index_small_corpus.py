@@ -217,10 +217,6 @@ if __name__ == '__main__':
 
     # Write the documents to a file
     with open(get_path_of('21207464-small.index', ignore_existence=True), 'w') as file:
-        # for term in merged:
-        #     file.write(f'{term}: {merged[term]}\n')
-        # for term in similarity_index:
-        #     file.write(f'"{term}": {similarity_index[term]}\n')
         json.dump(weights_index, file, indent=4)
     
     end_time = time.process_time()
