@@ -8,8 +8,6 @@ The project can be divided into three modules: **Indexing**, **Querying** and **
 
 ## How to run this project?
 
-+ First change the permission of the file.
-
 + For running indexing programs (like `index_small_corpus.py` and `index_large_corpus.py`)
 
     ```shell
